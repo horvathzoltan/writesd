@@ -10,6 +10,9 @@
 #include <iostream>
 #include <QProcess>
 #include <QCoreApplication>
+#include <QFileInfo>
+#include <QDateTime>
+#include <QDirIterator>
 
 Work1Params Work1::params;
 
@@ -45,19 +48,47 @@ auto Work1::doWork() -> int
 
     zInfo(usbdrive + ": "+QString::number(lastrec+1));
     QString msg;
-    bool confirmed = false;
+    bool confirmed = false;        
 
     if(params.ofile.isEmpty())
     {
         confirmed = true;
+        auto most_recent = MostRecent("~");
+
+        if(most_recent.isFile())zInfo("most recent:"+most_recent.fileName());
         params.ofile = GetFileName();
     }
     if(params.ofile.isEmpty()) return NOOUTFILE;
     if(!params.ofile.endsWith(".img")) params.ofile+=".img";
+    QFileInfo fi(params.ofile);
+    if(!fi.exists()) zInfo("image not exists");
     if(!confirmed) confirmed = ConfirmYes();
-    if(confirmed) dd(usbdrive, params.ofile, r, lastrec+1, &msg);
+    if(confirmed) dd(params.ofile, usbdrive, r, &msg);
 
     return OK;
+}
+
+QFileInfo Work1::MostRecent(const QString& path){
+    QFileInfo most_recent;
+    QFileInfo most_recent_cd;
+    QFileInfo most_recent_cr;
+    auto tstamp = QDateTime(QDate(1980,1,1));// ::currentDateTimeUtc().addYears(-1);//f1.lastModified();
+    auto tstamp_cd = tstamp;//QDateTime::currentDateTimeUtc().addYears(-1);//f1.lastModified();
+    auto tstamp_cr = tstamp;//QDateTime::currentDateTimeUtc().addYears(-1);//f1.lastModified();
+
+    QDirIterator it(path);
+    while (it.hasNext()) {
+        QFileInfo fi(it.next());
+        if(!fi.isFile()) continue;
+        auto fn = fi.fileName();
+        if(fn.endsWith(QLatin1String(".img")))
+        {
+            //if(!fi.completeSuffix().isEmpty()) continue;
+            auto ts = fi.lastModified();
+            if(ts>tstamp){ tstamp=ts; most_recent = fi;}
+        }
+    }
+    return most_recent;
 }
 
 int Work1::GetLastRecord(const QString& drive, int* units)
@@ -194,10 +225,10 @@ bool Work1::UmountParts(const QStringList &src)
     return isok;
 }
 
-int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString *mnt)
+int Work1::dd(const QString& src, const QString& dst, int bs, QString *mnt)
 {
     QString e;
-    auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 count=%4 if=%2 status=progress oflag=sync status=progress").arg(dst).arg(src).arg(bs).arg(count);
+    auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 if=%2 status=progress oflag=sync status=progress").arg(dst).arg(src).arg(bs);
     zInfo(cmd);
     return 1;
     auto out = Execute2(cmd);

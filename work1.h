@@ -3,6 +3,7 @@
 #include "common/helper/ProcessHelper/processhelper.h"
 
 
+#include <QFileInfo>
 #include <QStringList>
 
 struct Work1Params{
@@ -28,12 +29,13 @@ public:
     static QStringList GetUsbDrives();    
     static QString SelectUsbDrive(const QStringList& usbdrives);
     static int GetLastRecord(const QString &drive, int* units);
-    static int dd(const QString &src, const QString &dst, int bs, int count, QString *msg);
+    static int dd(const QString &src, const QString &dst, int bs, QString *msg);
     static bool ConfirmYes();
     static QString GetFileName();
     static QStringList MountedParts(const QString &src);
     static bool UmountParts(const QStringList &src);
     static com::helper::ProcessHelper::Output Execute2(const QString& cmd);
+    static QFileInfo MostRecent(const QString&);
 };
 
 #endif // WORK1_H
