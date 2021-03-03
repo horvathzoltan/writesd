@@ -33,6 +33,9 @@ auto Work1::doWork() -> int
     // sudo dd of=/dev/sdm bs=512 if=/media/zoli/mentes/QT_raspi_anti/raspicam3.img status=progress oflag=sync
     //if(params.ofile.isEmpty()) return NOOUTFILE;
     //if(!params.ofile.endsWith(".img")) params.ofile+=".img";
+    QString working_path = params.workingpath;
+    if(working_path.isEmpty()) working_path = qApp->applicationDirPath();
+
     auto usbDrives = GetUsbDrives();
     if(usbDrives.isEmpty()) return ISEMPTY;
     QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];    
@@ -53,17 +56,17 @@ auto Work1::doWork() -> int
     if(params.ofile.isEmpty())
     {
         confirmed = true;
-        auto most_recent = MostRecent("~");
+        auto most_recent = MostRecent(working_path);
 
         if(most_recent.isFile())zInfo("most recent:"+most_recent.fileName());
         params.ofile = GetFileName();
     }
-    if(params.ofile.isEmpty()) return NOOUTFILE;
+    if(params.ofile.isEmpty()) return NOINPUTFILE;
     if(!params.ofile.endsWith(".img")) params.ofile+=".img";
     QFileInfo fi(params.ofile);
-    if(!fi.exists()) zInfo("image not exists");
+    if(!fi.exists()) return FILENOTEXIST;
     if(!confirmed) confirmed = ConfirmYes();
-    if(confirmed) dd(params.ofile, usbdrive, r, &msg);
+    if(confirmed) dd(QDir(working_path).filePath(params.ofile), usbdrive, r, &msg);
 
     return OK;
 }
@@ -228,9 +231,9 @@ bool Work1::UmountParts(const QStringList &src)
 int Work1::dd(const QString& src, const QString& dst, int bs, QString *mnt)
 {
     QString e;
-    auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 if=%2 status=progress oflag=sync status=progress").arg(dst).arg(src).arg(bs);
-    zInfo(cmd);
-    return 1;
+    auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 if=%2 status=progress conv=fdatasync").arg(dst).arg(src).arg(bs);
+    //zInfo(cmd);
+    //return 1;
     auto out = Execute2(cmd);
     if(out.exitCode) return out.exitCode;
     if(out.stdOut.isEmpty()) return out.exitCode;

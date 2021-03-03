@@ -11,6 +11,7 @@ public:
     QString tmpfile;
     QString ofile;
     QString projname;
+    QString workingpath;
 };
 
 
@@ -19,7 +20,7 @@ class Work1
 {
 public:
     enum Result : int{
-      OK=0,ISEMPTY,NOOUTFILE,NOLASTREC,CANNOTUNMOUNT,NOUNITS
+      OK=0,ISEMPTY,NOLASTREC,CANNOTUNMOUNT,NOUNITS,NOINPUTFILE,FILENOTEXIST
     };
 public:
     Work1();

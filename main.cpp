@@ -27,10 +27,14 @@ auto main(int argc, char *argv[]) -> int
 
 //    const QString OPTION_TMP = QStringLiteral("template");
     const QString OPTION_OUT = QStringLiteral("output");
+    const QString OPTION_PATH = QStringLiteral("path");
+
 //    const QString OPTION_PROJNAME = QStringLiteral("project");
 
 //    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_TMP, QStringLiteral("template file"));
     com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
+    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_PATH, QStringLiteral("output folder"));
+
 //    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_PROJNAME, QStringLiteral("project name"));
 
     parser.process(a);
@@ -38,6 +42,8 @@ auto main(int argc, char *argv[]) -> int
 //    //    // statikus, számítunk arra, hogy van
 //    Work1::params.tmpfile = parser.value(OPTION_TMP);
     Work1::params.ofile = parser.value(OPTION_OUT);
+    Work1::params.workingpath = parser.value(OPTION_PATH);
+
 //    Work1::params.projname = parser.value(OPTION_PROJNAME);
 
     //TODO a parser is nem kell, a paraméterek kellenek
@@ -47,10 +53,11 @@ auto main(int argc, char *argv[]) -> int
     switch(errcode)
     {
         case Work1::OK: zInfo("ok"); break;
-        case Work1::ISEMPTY: zInfo("no block device to read"); break;
-        case Work1::NOOUTFILE: zInfo("no output file to write"); break;
+        case Work1::ISEMPTY: zInfo("no block device to write"); break;
+        case Work1::NOINPUTFILE: zInfo("no input file to read"); break;
         case Work1::NOLASTREC: zInfo("cannot find last record"); break;
         case Work1::NOUNITS: zInfo("unknown block size"); break;
+        case Work1::FILENOTEXIST: zInfo("file not exist"); break;
 
         case Work1::CANNOTUNMOUNT: zInfo("cannot unmount device"); break;
     }
