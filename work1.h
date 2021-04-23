@@ -37,6 +37,7 @@ public:
     static bool UmountParts(const QStringList &src);
     static com::helper::ProcessHelper::Output Execute2(const QString& cmd);
     static QFileInfo MostRecent(const QString&);
+    static QString BytesToString(double b);
 };
 
 #endif // WORK1_H
