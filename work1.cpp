@@ -1,6 +1,6 @@
 #include "work1.h"
 #include "common/logger/log.h"
-//#include "common/helper/textfilehelper/textfilehelper.h"
+#include "common/helper/textfilehelper/textfilehelper.h"
 #include "common/helper/ProcessHelper/processhelper.h"
 //#include "sqlhelper.h"
 //#include "settings.h"
@@ -52,6 +52,7 @@ auto Work1::doWork() -> int
     //zInfo("Last record on " + usbdrive + ": "+QString::number(lastrec+1));
     zInfo("Writing data to " + usbdrive);
     QString msg;
+
     bool confirmed = false;        
 
     if(params.ofile.isEmpty())
@@ -73,9 +74,55 @@ auto Work1::doWork() -> int
     zInfo(QStringLiteral("writing: %1 bytes (%2)").arg(b).arg(b_txt))
 
     auto fn = QDir(working_path).filePath(params.ofile);
-    if(confirmed) dd(fn, usbdrive, r, &msg);
+    if(!confirmed) return NOTCONFIRMED;
 
+    auto ddr = dd(fn, usbdrive, r);
+    if(ddr) return COPYERROR;
+//11381661696
+//22229807
+//512
+    qint64 lastrec_dest= b/r;
+    auto sha_fn1 = QDir(working_path).filePath("lastcopy.sha256");
+    sha256sumDevice(usbdrive, r, lastrec_dest, sha_fn1);
+
+    QString sha1 = getSha(sha_fn1);
+    if(sha1.isEmpty()) return NOCHECK1;
+    QString sha0 = getSha(fn+".sha256");
+    if(sha1.isEmpty()) return NOCHECK0;
+    zInfo(QStringLiteral("sha0: ")+sha0)
+    zInfo(QStringLiteral("sha1: ")+sha1)
+    if(sha1!=sha0) return CHECKSUMERROR;
     return OK;
+}
+
+QString Work1::getSha(const QString& fn){
+    auto txt = com::helper::TextFileHelper::load(fn);
+    if(txt.isEmpty()) return QString();
+    auto ix0 = txt.indexOf(' ');
+    if(ix0<0) return QString();
+    return txt.left(ix0);
+}
+/*
+$ dd if=/dev/sdb bs=4096 count=244992 | sha1sum
+
+sudo dd bs=512 count=22229808 if=/dev/sdj | sha256sum > lastcopy.sha256
+*/
+
+int Work1::sha256sumDevice(const QString& fn, int r, qint64 b, const QString& sha_fn)
+{
+    QString e;
+    zInfo("creating sha256 checksum...");
+    auto cmd = QStringLiteral("/bin/sh -c \"sudo dd bs=%2 count=%3 if=%1 | sha256sum > %4\"").arg(fn).arg(r).arg(b).arg(sha_fn);
+    //auto cmd1 = QStringLiteral("sudo dd bs=%2 count=%3 if=%1").arg(fn).arg(r).arg(b);
+    //auto cmd2 = QStringLiteral("sha256sum");
+    //zInfo(cmd);
+    //return 1;
+    auto out = Execute2(cmd);
+    if(out.exitCode) return out.exitCode;
+    if(out.stdOut.isEmpty()) return out.exitCode;
+    zInfo("ok");
+    //com::helper::TextFileHelper::save(out.stdOut, sha_fn);
+    return 0;
 }
 
 QString Work1::BytesToString(double b)
@@ -250,7 +297,7 @@ bool Work1::UmountParts(const QStringList &src)
     return isok;
 }
 
-int Work1::dd(const QString& src, const QString& dst, int bs, QString *mnt)
+int Work1::dd(const QString& src, const QString& dst, int bs)
 {
     QString e;
     auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 if=%2 status=progress conv=fdatasync").arg(dst).arg(src).arg(bs);
@@ -259,9 +306,9 @@ int Work1::dd(const QString& src, const QString& dst, int bs, QString *mnt)
     auto out = Execute2(cmd);
     zInfo("copy ready, syncing...");
     Execute2(QStringLiteral("sync"));
-    if(out.exitCode) return out.exitCode;
-    if(out.stdOut.isEmpty()) return out.exitCode;
-    if(mnt)*mnt = out.ToString();
+    //if(out.exitCode) return out.exitCode;
+    //if(out.stdOut.isEmpty()) return out.exitCode;
+    //if(mnt)*mnt = out.ToString();
     return 0;
 }
 
@@ -279,6 +326,47 @@ com::helper::ProcessHelper::Output Work1::Execute2(const QString& cmd){
     process.waitForFinished(-1); // will wait forever until finished
     return {process.readAllStandardOutput(), process.readAllStandardError(), process.exitCode()};
 }
+//https://stackoverflow.com/questions/20901884/piping-or-command-chaining-with-qprocess
+//com::helper::ProcessHelper::Output Work1::Execute2Pipe(const QString& cmd1, const QString& cmd2){
+//    //qint64 pid;
+//    QProcess process1;
+//    QProcess process2;
+
+
+//    static QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+//    env.insert("LD_LIBRARY_PATH", "/usr/lib"); // workaround - https://bugreports.qt.io/browse/QTBUG-2284
+//    static auto path = QCoreApplication::applicationDirPath();
+
+//    //process1.setProcessChannelMode(QProcess::ForwardedChannels);
+//    process1.setProcessEnvironment(env);
+//    process1.setWorkingDirectory(path);
+//    process1.setProcessChannelMode(QProcess::MergedChannels);
+
+//    process2.setProcessEnvironment(env);
+//    process2.setWorkingDirectory(path);
+//    process2.setProcessChannelMode(QProcess::);
+
+//    process1.setStandardOutputProcess(&process2);
+//    process1.start(cmd1);
+//    process2.start(cmd2);
+
+//    //process1.waitForFinished(-1); // will wait forever until finished
+
+//    process2.waitForFinished(); // will wait forever until finished
+
+//    //QByteArray output = process2.readAll(); // now the output is found in the 2nd process
+
+
+//    auto a0 = process2.readAllStandardOutput();
+//    auto a1 = process2.readAllStandardError();
+//    auto a2 = process2.exitCode();
+
+//    process1.close();
+//    process2.close();
+
+//    com::helper::ProcessHelper::Output a = {a0,a1,a2};
+//    return a;
+//}
 
 /*
 NAME PATH TYPE TRAN RM VENDOR MODEL PHY-SEC
