@@ -113,15 +113,10 @@ int Work1::sha256sumDevice(const QString& fn, int r, qint64 b, const QString& sh
     QString e;
     zInfo("creating sha256 checksum...");
     auto cmd = QStringLiteral("/bin/sh -c \"sudo dd bs=%2 count=%3 if=%1 | sha256sum > %4\"").arg(fn).arg(r).arg(b).arg(sha_fn);
-    //auto cmd1 = QStringLiteral("sudo dd bs=%2 count=%3 if=%1").arg(fn).arg(r).arg(b);
-    //auto cmd2 = QStringLiteral("sha256sum");
-    //zInfo(cmd);
-    //return 1;
     auto out = Execute2(cmd);
     if(out.exitCode) return out.exitCode;
     if(out.stdOut.isEmpty()) return out.exitCode;
     zInfo("ok");
-    //com::helper::TextFileHelper::save(out.stdOut, sha_fn);
     return 0;
 }
 
