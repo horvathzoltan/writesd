@@ -30,7 +30,7 @@ public:
     static QStringList GetUsbDrives();    
     static QString SelectUsbDrive(const QStringList& usbdrives);
     static int GetLastRecord(const QString &drive, int* units);
-    static int dd(const QString &src, const QString &dst, int bs);
+    static int dd(const QString& src, const QString& dst, int bs, QString *mnt);
     static bool ConfirmYes();
     static QString GetFileName();
     static QStringList MountedParts(const QString &src);

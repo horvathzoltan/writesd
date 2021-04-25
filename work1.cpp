@@ -76,7 +76,7 @@ auto Work1::doWork() -> int
     auto fn = QDir(working_path).filePath(params.ofile);
     if(!confirmed) return NOTCONFIRMED;
 
-    auto ddr = dd(fn, usbdrive, r);
+    auto ddr = dd(fn, usbdrive, r, &msg);
     if(ddr) return COPYERROR;
 //11381661696
 //22229807
@@ -297,7 +297,7 @@ bool Work1::UmountParts(const QStringList &src)
     return isok;
 }
 
-int Work1::dd(const QString& src, const QString& dst, int bs)
+int Work1::dd(const QString& src, const QString& dst, int bs, QString *mnt)
 {
     QString e;
     auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 if=%2 status=progress conv=fdatasync").arg(dst).arg(src).arg(bs);
@@ -306,9 +306,10 @@ int Work1::dd(const QString& src, const QString& dst, int bs)
     auto out = Execute2(cmd);
     zInfo("copy ready, syncing...");
     Execute2(QStringLiteral("sync"));
-    //if(out.exitCode) return out.exitCode;
-    //if(out.stdOut.isEmpty()) return out.exitCode;
-    //if(mnt)*mnt = out.ToString();
+    if(mnt)*mnt = out.ToString();
+
+    if(out.exitCode) return out.exitCode;
+    if(out.stdOut.isEmpty()) return out.exitCode;
     return 0;
 }
 
