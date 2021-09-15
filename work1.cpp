@@ -41,10 +41,9 @@ auto Work1::doWork() -> int
     QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];    
     //QStringList usbDrives = {"a", "b", "c", "d"};
     //auto usbdrive = SelectUsbDrive(usbDrives);
-    int r=55;
-    auto lastrec = GetLastRecord(usbdrive, &r); // megtudjuk a rekord méretet, ez kell a dd-hez
-    if(lastrec==-1) return NOLASTREC;
-    if(r==0) return NOUNITS;
+
+    //QString lr = QString::number(lastrec)+','+QString::number(r);
+
 
     QStringList mountedparts = MountedParts(usbdrive);
     if(!mountedparts.isEmpty() && !UmountParts(mountedparts)) return CANNOTUNMOUNT;
@@ -75,6 +74,26 @@ auto Work1::doWork() -> int
 
     auto fn = QDir(working_path).filePath(params.ofile);
     if(!confirmed) return NOTCONFIRMED;
+
+    int r=0;
+    int lastrec = -1;//= GetLastRecord(usbdrive, &r); // megtudjuk a rekord méretet, ez kell a dd-hez
+
+    QString csvfn = fn;
+    csvfn.replace(".img",".csv");
+
+    auto lr = com::helper::TextFileHelper::load(csvfn);
+    if(lr.isEmpty()) return NOLASTREC;
+    auto lrl = lr.split(',');
+    if(lrl.count()<2) return NOLASTREC;
+    bool isok;
+    lastrec = lrl[0].toInt(&isok);
+    if(!isok) return NOLASTREC;
+    r = lrl[1].toInt(&isok);
+    if(!isok) return NOUNITS;
+    if(lastrec==-1) return NOLASTREC;
+    if(r==0) return NOUNITS;
+
+    zInfo(QStringLiteral("lastrec: %1 size (%2)").arg(lastrec).arg(r))
 
     auto ddr = dd(fn, usbdrive, r, &msg);
     if(ddr) return COPYERROR;
