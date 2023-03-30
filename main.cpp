@@ -6,6 +6,7 @@
 
 #include "work1.h"
 #include "typekey.h"
+#include "helpers/stringify.h"
 
 struct ParserKeyValueDesc{
     QString key;
@@ -27,15 +28,23 @@ void ParserInit(QCommandLineParser *p, QCoreApplication *a, const QString& desc,
 
 auto main(int argc, char *argv[]) -> int
 {
+#if defined (STRING) && defined (TARGI)
+    auto target = STRING(TARGI);
+#else
+    auto target=QStringLiteral("ApplicationNameString");
+#endif
+    QCoreApplication a(argc, argv);
+    QCoreApplication::setApplicationName(target);
+    QCoreApplication::setApplicationVersion("1");
+    QCoreApplication::setOrganizationName("LogControl Kft.");
+    QCoreApplication::setOrganizationDomain("https://www.logcontrol.hu/");
+
     SignalHelper::setShutDownSignal(SignalHelper::SIGINT_); // shut down on ctrl-c
     SignalHelper::setShutDownSignal(SignalHelper::SIGTERM_); // shut down on killall
     Logger::Init(Logger::ErrLevel::INFO, Logger::DbgLevel::TRACE, true, true);
 
-
-    zInfo(QStringLiteral("started: %1").arg("writesd"));
-
-    QCoreApplication a(argc, argv);
-    QCoreApplication::setApplicationName(QStringLiteral("writesd"));
+    QString user = qgetenv("USER");
+    zInfo(QStringLiteral("started ")+target+" as "+user);
 
     QCommandLineParser parser;
 
