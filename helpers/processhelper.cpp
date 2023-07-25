@@ -98,9 +98,12 @@ ProcessHelper::Output ProcessHelper::Execute3(const QList<Model>& models){
                 if(m.showStdErr) std::cerr << d.toStdString();
                 //o2.append(d.toStdString());
                 o2.append(d.toStdString());
+
             }
+            //zInfo("opp");
         };
 
+        //p->setReadChannel(QProcess::StandardError);
         QObject::connect(p, &QProcess::readyReadStandardError,readyR);
 
 
