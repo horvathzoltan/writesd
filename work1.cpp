@@ -24,8 +24,8 @@ Work1::Work1() = default;
 auto Work1::doWork() -> int
 {
     if(params.passwd.isEmpty()){
-           params.passwd = GetFileName("Add sudo password.");
-       }
+        params.passwd = GetFileName("Add sudo password.");
+    }
 
     if(params.passwd.isEmpty()) return NO_PASSWD;
 
@@ -45,12 +45,13 @@ auto Work1::doWork() -> int
 
     auto usbDrives = GetUsbDrives();
     if(usbDrives.isEmpty()) return ISEMPTY;
-    QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];    
+    QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];
     //QStringList usbDrives = {"a", "b", "c", "d"};
     //auto usbdrive = SelectUsbDrive(usbDrives);
-
-    //QString lr = QString::number(lastrec)+','+QString::number(r);
-
+    int r=55;
+    auto lastrec = GetLastRecord(usbdrive, &r); // megtudjuk a rekord méretet, ez kell a dd-hez
+    if(lastrec==-1) return NOLASTREC;
+    if(r==0) return NOUNITS;
 
     QStringList mountedparts = MountedParts(usbdrive);
     if(!mountedparts.isEmpty() && !UmountParts(mountedparts)) return CANNOTUNMOUNT;
@@ -59,7 +60,7 @@ auto Work1::doWork() -> int
     zInfo("Writing data to " + usbdrive);
     QString msg;
 
-    bool confirmed = false;        
+    bool confirmed = false;
 
     if(params.ofile.isEmpty())
     {
@@ -82,31 +83,11 @@ auto Work1::doWork() -> int
     auto fn = QDir(working_path).filePath(params.ofile);
     if(!confirmed) return NOTCONFIRMED;
 
-    int r=0;
-    int lastrec = -1;//= GetLastRecord(usbdrive, &r); // megtudjuk a rekord méretet, ez kell a dd-hez
-
-    QString csvfn = fn;
-    csvfn.replace(".img",".csv");
-
-    auto lr = com::helper::TextFileHelper::load(csvfn);
-    if(lr.isEmpty()) return NOLASTREC;
-    auto lrl = lr.split(',');
-    if(lrl.count()<2) return NOLASTREC;
-    bool isok;
-    lastrec = lrl[0].toInt(&isok);
-    if(!isok) return NOLASTREC;
-    r = lrl[1].toInt(&isok);
-    if(!isok) return NOUNITS;
-    if(lastrec==-1) return NOLASTREC;
-    if(r==0) return NOUNITS;
-
-    zInfo(QStringLiteral("lastrec: %1 size (%2)").arg(lastrec).arg(r))
-
     auto ddr = dd(fn, usbdrive, r, &msg);
     if(ddr) return COPYERROR;
-//11381661696
-//22229807
-//512
+    //11381661696
+    //22229807
+    //512
     qint64 lastrec_dest= b/r;
     auto sha_fn1 = QDir(working_path).filePath("lastcopy.sha256");
     sha256sumDevice(usbdrive, r, lastrec_dest, sha_fn1);
@@ -116,8 +97,8 @@ auto Work1::doWork() -> int
     QString sha0 = getSha(fn+".sha256");
     if(sha1.isEmpty()) return NOCHECK0;
     zInfo(QStringLiteral("sha0: ")+sha0)
-    zInfo(QStringLiteral("sha1: ")+sha1)
-    if(sha1!=sha0) return CHECKSUMERROR;
+        zInfo(QStringLiteral("sha1: ")+sha1)
+        if(sha1!=sha0) return CHECKSUMERROR;
     return OK;
 }
 
@@ -228,25 +209,25 @@ NR START END SECTORS SIZE NAME UUID
         auto k = j[2].toInt(&isok);
         if(isok && k>lastrec)
         {
-             lastrec = k;
-             if(units!=nullptr)
-             {
+            lastrec = k;
+            if(units!=nullptr)
+            {
                 auto sectors = j[3].toULong();
                 auto size = j[4].toULong();
                 int r = size/sectors;
                 *units =r;
-             }
+            }
         }
 
-//        if(units!=nullptr && i.startsWith(QStringLiteral("Units:")))
-//        {
-//            auto j = i.split('=');
+        //        if(units!=nullptr && i.startsWith(QStringLiteral("Units:")))
+        //        {
+        //            auto j = i.split('=');
 
-//            auto k = j[1].split(' ');
-//            bool isok;
-//            auto u = k[1].toInt(&isok);
-//            if(isok) *units = u;
-//        }
+        //            auto k = j[1].split(' ');
+        //            bool isok;
+        //            auto u = k[1].toInt(&isok);
+        //            if(isok) *units = u;
+        //        }
     }
 
     return lastrec;
@@ -269,7 +250,7 @@ auto Work1::GetUsbDrives() -> QStringList
         if(i.isEmpty()) continue;
         auto j=i.split(' ');
         if(j[8]=='/'||j[8]=="/boot") continue;
-        if(            
+        if(
             j[2]==QLatin1String("disk")&&
             j[3]==QLatin1String("usb")&&
             j[4]==QLatin1String("1")) e.append(j[1]);
@@ -285,7 +266,7 @@ QString Work1::SelectUsbDrive(const QStringList &usbdrives)
     for(auto&i:usbdrives) zInfo(QString::number(j++)+": "+i);j--;
     zInfo("select 1-"+QString::number(j))
 
-    QTextStream in(stdin);
+        QTextStream in(stdin);
     auto intxt = in.readLine();
     bool isok;
     auto ix = intxt.toInt(&isok);
@@ -297,7 +278,7 @@ QString Work1::SelectUsbDrive(const QStringList &usbdrives)
 bool Work1::ConfirmYes()
 {
     zInfo("Say 'yes' to continue or any other to quit.")
-    QTextStream in(stdin);
+        QTextStream in(stdin);
     auto intxt = in.readLine();
     return intxt.trimmed().toLower()=="yes";
 }
@@ -360,4 +341,3 @@ int Work1::dd(const QString& src, const QString& dst, int bs, QString *mnt)
     if(out.stdOut.isEmpty()) return out.exitCode;
     return 0;
 }
-
