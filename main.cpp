@@ -1,53 +1,68 @@
 #include <QCoreApplication>
-#include "common/logger/log.h"
-#include "common/helper/signalhelper/signalhelper.h"
-#include "common/coreappworker/coreappworker.h"
-#include "common/helper/CommandLineParserHelper/commandlineparserhelper.h"
-//#include "settings.h"
-//#include "environment.h"
+#include "helpers/logger.h"
+#include "helpers/signalhelper.h"
+#include "helpers/commandlineparserhelper.h"
+#include "helpers/coreappworker.h"
+
 #include "work1.h"
-//#include "buildnumber.h"
+#include "typekey.h"
+#include "helpers/stringify.h"
+
+struct ParserKeyValueDesc{
+    QString key;
+    QString value;
+    QString desc;
+};
+
+void ParserInit(QCommandLineParser *p, QCoreApplication *a, const QString& desc, const QList<ParserKeyValueDesc>& opts)
+{
+    p->setApplicationDescription(desc);
+    p->addHelpOption();
+    p->addVersionOption();
+
+    //const QString OPTION_OUT = QStringLiteral("output");
+    for(auto&i:opts) CommandLineParserHelper::addOption(p, i.key, i.desc);
+
+    p->process(*a);
+}
 
 auto main(int argc, char *argv[]) -> int
 {
-    com::helper::SignalHelper::setShutDownSignal(com::helper::SignalHelper::SIGINT_); // shut down on ctrl-c
-    com::helper::SignalHelper::setShutDownSignal(com::helper::SignalHelper::SIGTERM_); // shut down on killall
-
-    //    zInfo(QStringLiteral("started: %1").arg(Buildnumber::buildnum));
-    //zInfo(QStringLiteral("started: %1").arg(BUILDNUMBER));
-
+#if defined (STRING) && defined (TARGI)
+    auto target = STRING(TARGI);
+#else
+    auto target=QStringLiteral("ApplicationNameString");
+#endif
     QCoreApplication a(argc, argv);
-    QCoreApplication::setApplicationName(QStringLiteral("readsd"));
+    QCoreApplication::setApplicationName(target);
+    QCoreApplication::setApplicationVersion("1");
+    QCoreApplication::setOrganizationName("LogControl Kft.");
+    QCoreApplication::setOrganizationDomain("https://www.logcontrol.hu/");
+
+    SignalHelper::setShutDownSignal(SignalHelper::SIGINT_); // shut down on ctrl-c
+    SignalHelper::setShutDownSignal(SignalHelper::SIGTERM_); // shut down on killall
+    Logger::Init(Logger::ErrLevel::INFO, Logger::DbgLevel::TRACE, true, true);
+
+    QString user = qgetenv("USER");
+    zInfo(QStringLiteral("started ")+target+" as "+user);
 
     QCommandLineParser parser;
 
-    parser.setApplicationDescription(QStringLiteral("reads a sd card"));
-    parser.addHelpOption();
-    parser.addVersionOption();
+    ParserInit(&parser, &a, QStringLiteral("writes a sd card"),
+                   {
+                       {
+                           zkey(Work1Params::ofile),
+                           QStringLiteral("output"),
+                           QStringLiteral("file as output")
+                       }
+                   });
+   const QString OPTION_PATH = QStringLiteral("path");
 
-//    const QString OPTION_TMP = QStringLiteral("template");
-    const QString OPTION_OUT = QStringLiteral("output");
-    const QString OPTION_PATH = QStringLiteral("path");
+    CommandLineParserHelper::addOption(&parser, OPTION_PATH, QStringLiteral("output folder"));
 
-//    const QString OPTION_PROJNAME = QStringLiteral("project");
-
-//    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_TMP, QStringLiteral("template file"));
-    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
-    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_PATH, QStringLiteral("output folder"));
-
-//    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_PROJNAME, QStringLiteral("project name"));
-
-    parser.process(a);
-
-//    //    // statikus, számítunk arra, hogy van
-//    Work1::params.tmpfile = parser.value(OPTION_TMP);
-    Work1::params.ofile = parser.value(OPTION_OUT);
     Work1::params.workingpath = parser.value(OPTION_PATH);
 
-//    Work1::params.projname = parser.value(OPTION_PROJNAME);
-
-    //TODO a parser is nem kell, a paraméterek kellenek
-    com::CoreAppWorker c(Work1::doWork, &a, &parser);
+    CoreAppWorker c(Work1::doWork, &a, &parser);
     volatile auto errcode = c.run();
 
     switch(errcode)
@@ -63,6 +78,8 @@ auto main(int argc, char *argv[]) -> int
         case Work1::NOCHECK0: zInfo("no checksum0"); break;
         case Work1::NOCHECK1: zInfo("no checksum1"); break;
         case Work1::CHECKSUMERROR: zInfo("checksum error"); break;
+        case Work1::NO_PASSWD: zInfo("cannot sudo"); break;
+
         default: zInfo("an error occured: "+QString::number(errcode)); break;
     }
 

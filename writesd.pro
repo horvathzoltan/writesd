@@ -3,6 +3,9 @@ QT -= gui
 CONFIG += c++17 console
 CONFIG -= app_bundle
 
+DEFINES += SOURCE_PATH=$$PWD
+DEFINES += TARGI=$$TARGET
+
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
@@ -55,41 +58,29 @@ contains(QMAKESPEC,.*linux-rasp-pi\d*-.*){
     CONFIG += rpi
 }
 
-unix:!macx:
-{
-message(LIBS added for unix:!macx)
-LIBS += -L$$COMMON_LIBS_FULLPATH/ -llogger
-LIBS += -L$$COMMON_LIBS_FULLPATH/ -lshortguid # loggerhez kell
-LIBS += -L$$COMMON_LIBS_FULLPATH/ -lsignalhelper
-LIBS += -L$$COMMON_LIBS_FULLPATH/ -lCommandLineParserHelper
-LIBS += -L$$COMMON_LIBS_FULLPATH/ -lcoreappworker
-#LIBS += -L$$COMMON_LIBS_FULLPATH/ -lstringhelper
-LIBS += -L$$COMMON_LIBS_FULLPATH/ -ltextfilehelper
-LIBS += -L$$COMMON_LIBS_FULLPATH/ -lfilehelper
-#LIBS += -L$$COMMON_LIBS_FULLPATH/ -ldownloadhelper
-LIBS += -L$$COMMON_LIBS_FULLPATH/ -lprocesshelper
-LIBS += -L$$COMMON_LIBS_FULLPATH/ -lmacrofactory
-
-#LIBS += -L$$COMMON_LIBS_FULLPATH/ -linihelper
-#LIBS += -L$$COMMON_LIBS_FULLPATH/ -lsettingshelper
-#LIBS += -L$$COMMON_LIBS_FULLPATH/ -lxmlhelper
-}
-
-# unix:QMAKE_RPATHDIR += /usr/mylib
-# QMAKE_LFLAGS += -Wl,-rpath, "$$system_path($$HOME/$$INSTALLDIR)"
-#QMAKE_LFLAGS += -Wl,-rpath,"$$HOME/$$COMMON_LIBS_FULLPATH"
-#QMAKE_LFLAGS += -Wl,-rpath,"/$$HOME/$$INSTALLDIR/macrofactory"
-#QMAKE_LFLAGS += -Wl,-rpath,"/home/zoli/build-common-Desktop_Qt_5_9_0_GCC_64bit-Debug/stringhelper"
-#QMAKE_LFLAGS += -Wl,-rpath,"/home/zoli/build-common-Desktop_Qt_5_9_0_GCC_64bit-Debug/macrofactory"
-#QMAKE_LFLAGS += -Wl,-rpath,"/home/zoli/build-common-Desktop_Qt_5_12_2_GCC_64bit2-Debug/stringhelper"
-#QMAKE_LFLAGS += -Wl,-rpath,"/home/zoli/build-common-Desktop_Qt_5_12_2_GCC_64bit2-Debug/macrofactory"
-#INCLUDEPATH += $$HOME/common
-INCLUDEPATH += $$HOME/common
-DEPENDPATH += $$HOME/common
 
 SOURCES += \
+        helpers/commandlineparserhelper.cpp \
+        helpers/coreappworker.cpp \
+        helpers/logger.cpp \
+        helpers/networkhelper.cpp \
+        helpers/processhelper.cpp \
+        helpers/signalhelper.cpp \
+        helpers/textfilehelper.cpp \
         main.cpp \
         work1.cpp
+
+HEADERS += \
+    helpers/commandlineparserhelper.h \
+    helpers/coreappworker.h \
+    helpers/logger.h \
+    helpers/networkhelper.h \
+    helpers/processhelper.h \
+    helpers/signalhelper.h \
+    helpers/stringify.h \
+    helpers/textfilehelper.h \
+    typekey.h \
+    work1.h
 
 unix:rpi:{
 message(LIBS added for raspberry_pi)
@@ -101,5 +92,4 @@ else: unix:rpi: target.path = /home/pi/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-HEADERS += \
-    work1.h
+

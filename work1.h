@@ -1,26 +1,23 @@
 #ifndef WORK1_H
 #define WORK1_H
-#include "common/helper/ProcessHelper/processhelper.h"
-
 
 #include <QFileInfo>
 #include <QStringList>
 
 struct Work1Params{
 public:
-    QString tmpfile;
+    //QString tmpfile;
     QString ofile;
-    QString projname;
+    //QString projname;
     QString workingpath;
+    QString passwd;
 };
-
-
 
 class Work1
 {
 public:
     enum Result : int{
-      OK=0,ISEMPTY,NOLASTREC,CANNOTUNMOUNT,NOUNITS,NOINPUTFILE,FILENOTEXIST,NOTCONFIRMED,COPYERROR,NOCHECK0,NOCHECK1,CHECKSUMERROR
+      OK=0,ISEMPTY,NOLASTREC,CANNOTUNMOUNT,NOUNITS,NOINPUTFILE,FILENOTEXIST,NOTCONFIRMED,COPYERROR,NOCHECK0,NOCHECK1,CHECKSUMERROR,NO_PASSWD
     };
 public:
     Work1();
@@ -32,7 +29,7 @@ public:
     static int GetLastRecord(const QString &drive, int* units);
     static int dd(const QString& src, const QString& dst, int bs, QString *mnt);
     static bool ConfirmYes();
-    static QString GetFileName();
+    static QString GetFileName(const QString& msg);
     static QStringList MountedParts(const QString &src);
     static bool UmountParts(const QStringList &src);    
     static QFileInfo MostRecent(const QString&);
@@ -40,7 +37,7 @@ public:
     static int sha256sumDevice(const QString &fn, int r, qint64 b, const QString& sha_fn);
     static QString getSha(const QString &fn);
 
-    static com::helper::ProcessHelper::Output Execute2(const QString& cmd);
+    //static ProcessHelper::Output Execute2(const QString& cmd);
     //static com::helper::ProcessHelper::Output Execute2Pipe(const QString &cmd1, const QString &cmd2);
 };
 
