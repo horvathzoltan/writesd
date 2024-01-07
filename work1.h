@@ -13,21 +13,61 @@ public:
     QString passwd;
 };
 
+struct UsbDriveModel{
+    QString devicePath;
+    QString usbPath;
+    QStringList partLabels;
+    long size;
+
+    QString toString() const;
+    bool isValid();
+    QString GetLastUsbTag() const;
+};
+
+struct RecModel{
+    int units;
+    int lastrec;
+};
+
 class Work1
 {
 public:
     enum Result : int{
-      OK=0,ISEMPTY,NOLASTREC,CANNOTUNMOUNT,NOUNITS,NOINPUTFILE,FILENOTEXIST,NOTCONFIRMED,COPYERROR,NOCHECK0,NOCHECK1,CHECKSUMERROR,NO_PASSWD
+        OK=0,
+        ISEMPTY,
+        NO_LASTREC,
+        CANNOT_UNMOUNT,
+        NO_UNITS,
+        NO_INPUTFILE,
+        FILENOTEXIST,
+        NOT_CONFIRMED,
+        COPY_ERROR,
+        NO_CHECK0,
+        NO_CHECK1,
+        CHECKSUM_ERROR,
+        NO_PASSWD,
+        NO_USBDRIVE,
+        DRIVE_SIZE_ERROR
     };
 public:
     Work1();
     static int doWork();
     static Work1Params params;
 
-    static QStringList GetUsbDrives();    
-    static QString SelectUsbDrive(const QStringList& usbdrives);
-    static int GetLastRecord(const QString &drive, int* units);
+    static QList<UsbDriveModel> GetUsbDrives();
+    static UsbDriveModel SelectUsbDrive(const QList<UsbDriveModel>& usbdrives);
+    static QString GetUsbPath(const QString& dev);
+    static QStringList GetPartLabels(const QString& dev);
+
+    static int GetLastRecord(const QString &drive, int* units);    
+    static QList<RecModel> GetLastRecords(const QList<UsbDriveModel> &usbdrives);
+    static bool CheckRecords_Units(const QList<RecModel>& records);
+
+    static QList<UsbDriveModel> GetSmallUsbDrive(const QList<UsbDriveModel>& usbdrives, long size);
+    static QStringList GetDevPaths(const QList<UsbDriveModel>& usbdrives);
+
     static int dd(const QString& src, const QString& dst, int bs, QString *mnt);
+    static int dd2(const QString& src, const QStringList& dst, int bs, QString *mnt);
     static bool ConfirmYes();
     static QString GetFileName(const QString& msg);
     static QStringList MountedParts(const QString &src);
@@ -39,6 +79,8 @@ public:
 
     //static ProcessHelper::Output Execute2(const QString& cmd);
     //static com::helper::ProcessHelper::Output Execute2Pipe(const QString &cmd1, const QString &cmd2);
+private:
+    static QList<UsbDriveModel> SelectUsbDrives(const QList<UsbDriveModel>& drives);
 };
 
 #endif // WORK1_H

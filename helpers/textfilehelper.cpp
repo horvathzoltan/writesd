@@ -30,8 +30,13 @@ void TextFileHelper::SetUtf8Encoding(QTextStream* st)
 
 bool TextFileHelper::Load(const QString& filename, QString* e)
 {
-    if(filename.isEmpty()) return false;
     if(e==nullptr) return false;
+
+    bool valid = Exists(filename);
+    if(!valid) return false;
+    /*
+    if(filename.isEmpty()) return false;
+
 
     QFileInfo fi(filename);
     if(!fi.isAbsolute())
@@ -46,7 +51,7 @@ bool TextFileHelper::Load(const QString& filename, QString* e)
         _lastError = FNE.arg(filename);
         if(_verbose) zInfo(_lastError);
         return false;
-    }
+    }*/
 
     QFile f(filename);
 
@@ -71,10 +76,13 @@ bool TextFileHelper::Load(const QString& filename, QString* e)
 }
 
 bool TextFileHelper::LoadLines(const QString& filename, QStringList* e) {
-    if(filename.isEmpty()) return false;
+    //if(filename.isEmpty()) return false;
     if(e==nullptr) return false;
 
-    QFileInfo fi(filename);
+    bool valid = Exists(filename);
+    if(!valid) return false;
+
+    /*QFileInfo fi(filename);
     if(!fi.isAbsolute())
     {
         _lastError = PNE.arg(filename);
@@ -87,7 +95,7 @@ bool TextFileHelper::LoadLines(const QString& filename, QStringList* e) {
         _lastError = FNE.arg(filename);
         if(_verbose) zInfo(_lastError);
         return false;
-    }
+    }*/
 
     QFile f(filename);
 
@@ -114,9 +122,12 @@ bool TextFileHelper::LoadLines(const QString& filename, QStringList* e) {
 }
 
 bool TextFileHelper::LoadLinesContains(const QString& filename, const QStringList& t1, QStringList* e) {
-    if(filename.isEmpty()) return false;
     if(e==nullptr) return false;
 
+    bool valid = Exists(filename);
+    if(!valid) return false;
+
+    /*if(filename.isEmpty()) return false;
     QFileInfo fi(filename);
     if(!fi.isAbsolute())
     {
@@ -130,7 +141,7 @@ bool TextFileHelper::LoadLinesContains(const QString& filename, const QStringLis
         _lastError = FNE.arg(filename);
         if(_verbose) zInfo(_lastError);
         return false;
-    }
+    }*/
 
     QFile f(filename);
 
@@ -199,4 +210,34 @@ QString TextFileHelper::GetFileName(const QString &fn)
     QFileInfo fi(fn);
     QString e = fi.fileName();
     return e;
+}
+
+bool TextFileHelper::Exists(const QString &filename)
+{
+    if(filename.isEmpty()) return false;
+
+    QFileInfo fi(filename);
+    if(!fi.isAbsolute())
+    {
+        _lastError = PNE.arg(filename);
+        if(_verbose) zInfo(_lastError);
+        return false;
+    }
+
+    if(!fi.exists())
+    {
+        _lastError = FNE.arg(filename);
+        if(_verbose) zInfo(_lastError);
+        return false;
+    }
+
+    return true;
+}
+
+bool TextFileHelper::Delete(const QString &filename)
+{
+    bool valid = Exists(filename);
+    if(!valid) return false;
+    bool ok = QFile::remove(filename);
+    return ok;
 }

@@ -18,6 +18,8 @@ public:
     static bool LoadLinesContains(const QString &filename, const QStringList &t1, QStringList* e);    
     static bool Save(const QString &txt, const QString &fn, bool isAppend = false);
     static QString GetFileName(const QString& fn);
+    static bool Exists(const QString& fn);
+    static bool Delete(const QString& fn);
 private:
     static void SetUtf8Encoding(QTextStream* st);
 };

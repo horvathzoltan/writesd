@@ -69,16 +69,19 @@ auto main(int argc, char *argv[]) -> int
     {
         case Work1::OK: zInfo("ok"); break;
         case Work1::ISEMPTY: zInfo("no block device to write"); break;
-        case Work1::NOINPUTFILE: zInfo("no input file to read"); break;
-        case Work1::NOLASTREC: zInfo("cannot find last record"); break;
-        case Work1::NOUNITS: zInfo("unknown block size"); break;
+        case Work1::NO_INPUTFILE: zInfo("no input file to read"); break;
+        case Work1::NO_LASTREC: zInfo("cannot find last record"); break;
+        case Work1::NO_UNITS: zInfo("unknown block size"); break;
         case Work1::FILENOTEXIST: zInfo("file not exist"); break;
 
-        case Work1::CANNOTUNMOUNT: zInfo("cannot unmount device"); break;
-        case Work1::NOCHECK0: zInfo("no checksum0"); break;
-        case Work1::NOCHECK1: zInfo("no checksum1"); break;
-        case Work1::CHECKSUMERROR: zInfo("checksum error"); break;
+        case Work1::CANNOT_UNMOUNT: zInfo("cannot unmount device"); break;
+        case Work1::NO_CHECK0: zInfo("no checksum0"); break;
+        case Work1::NO_CHECK1: zInfo("no checksum1"); break;
+        case Work1::CHECKSUM_ERROR: zInfo("checksum error"); break;
         case Work1::NO_PASSWD: zInfo("cannot sudo"); break;
+
+        case Work1::NO_USBDRIVE: zInfo("no usb device to use"); break;
+        case Work1::DRIVE_SIZE_ERROR: zInfo("drive size error"); break;
 
         default: zInfo("an error occured: "+QString::number(errcode)); break;
     }
