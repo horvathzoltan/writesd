@@ -29,6 +29,8 @@ auto Work1::doWork() -> int
 
     if(params.passwd.isEmpty()) return NO_PASSWD;
 
+    ProcessHelper::SetPassword(params.passwd);
+
     // TODO 1. megtudni a kártyát
     // lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec,mountpoint
     // ha több van, lista, választani
@@ -174,15 +176,18 @@ int Work1::sha256sumDevice(const QString& fn, int r, qint64 b, const QString& sh
 {
     auto sha_fn2 = TextFileHelper::GetFileName(sha_fn);
     zInfo("sha256sum on dev: "+fn+" -> "+sha_fn2);
-    auto cmd1 = QStringLiteral("dd bs=%2 count=%3 if=%1 status=progress").arg(fn).arg(r).arg(b);
+    //auto cmd1 = QStringLiteral("dd bs=%2 count=%3 if=%1 status=progress ").arg(fn).arg(r).arg(b);
 
-    auto m = ProcessHelper::Model::ParseAsSudo(cmd1, params.passwd);
-    m[1].showStdErr=false;
-    m.append({.cmd="sha256sum", .args = {}, .timeout=-1, .showStdErr = false });
+    //auto m = ProcessHelper::Model::ParseAsSudo(cmd1, params.passwd);
+    //m[1].showStdErr=false;
+    //m.append({.cmd="sha256sum", .args = {}, .timeout=-1, .showStdErr = false });
 
-    auto out = ProcessHelper::Execute3(m);
+    //auto out = ProcessHelper::Execute3(m);
 
-    if(out.exitCode) return out.exitCode;
+    auto cmd = QStringLiteral("dd bs=%2 count=%3 if=%1 status=progress | sha256sum").arg(fn).arg(r).arg(b);
+    auto out = ProcessHelper::ShellExecuteSudo(cmd, -1);
+
+    //if(out.exitCode) return out.exitCode;
     if(out.stdOut.isEmpty()) return out.exitCode;
     TextFileHelper::Save(out.stdOut, sha_fn);
     zInfo("ok");
@@ -240,10 +245,12 @@ NR START END SECTORS SIZE NAME UUID
 */
     //auto cmd = QStringLiteral("sudo fdisk -l %1").arg(drive);
     auto cmd = QStringLiteral("partx -rb %1").arg(drive);
-    auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
+    //auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
     //m2[0].showStdErr= false;
-    m2[1].showStdErr= false;
-    auto out = ProcessHelper::Execute3(m2);
+    //m2[1].showStdErr= false;
+    //auto out = ProcessHelper::Execute3(m2);
+
+    auto out = ProcessHelper::ShellExecuteSudo(cmd);
 
     if(out.exitCode) return -1;
     if(out.stdOut.isEmpty()) return -1;
@@ -331,8 +338,9 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
     QList<UsbDriveModel> e;
 
     auto cmd = QStringLiteral("lsblk -dbro name,path,type,tran,rm,vendor,model,phy-sec,size,mountpoint");
-    auto m2 = ProcessHelper::Model::Parse(cmd);
-    auto out = ProcessHelper::Execute3(m2);
+    //auto m2 = ProcessHelper::Model::Parse(cmd);
+    //auto out = ProcessHelper::Execute3(m2);
+    auto out = ProcessHelper::ShellExecute(cmd);
     if(out.exitCode) return e;
     if(out.stdOut.isEmpty()) return e;
 
@@ -375,8 +383,9 @@ QString Work1::GetUsbPath(const QString &dev)
 {
     auto cmd = QStringLiteral("udevadm info -q path");
     cmd+=" "+dev;
-    auto m2 = ProcessHelper::Model::Parse(cmd);
-    auto out = ProcessHelper::Execute3(m2);
+    //auto m2 = ProcessHelper::Model::Parse(cmd);
+    //auto out = ProcessHelper::Execute3(m2);
+    auto out = ProcessHelper::ShellExecute(cmd);
     if(out.exitCode) return "";
     if(out.stdOut.isEmpty()) return "";
 
@@ -395,8 +404,10 @@ QString Work1::GetUsbPath(const QString &dev)
 QStringList Work1::GetPartLabels(const QString &dev)
 {
     auto cmd = QStringLiteral("lsblk -r %1 -o NAME,path,LABEL,Type").arg(dev);
-    auto m2 = ProcessHelper::Model::Parse(cmd);
-    auto out = ProcessHelper::Execute3(m2);
+    //auto m2 = ProcessHelper::Model::Parse(cmd);
+    //auto out = ProcessHelper::Execute3(m2);
+    auto out = ProcessHelper::ShellExecute(cmd);
+
     if(out.exitCode) return QStringList();
     if(out.stdOut.isEmpty()) return QStringList();
 
@@ -474,8 +485,9 @@ QStringList Work1::MountedParts(const QString &src)
 {
     QStringList e;
     auto cmd = QStringLiteral("mount -l");
-    auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
-    auto out = ProcessHelper::Execute3(m2);
+    //auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
+    //auto out = ProcessHelper::Execute3(m2);
+    auto out = ProcessHelper::ShellExecuteSudo(cmd);
 
     if(out.exitCode) return e;
     if(out.stdOut.isEmpty()) return e;
@@ -494,8 +506,9 @@ bool Work1::UmountParts(const QStringList &src)
     for(auto&i:src)
     {
         auto cmd = QStringLiteral("umount %1").arg(i);
-        auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
-        auto out = ProcessHelper::Execute3(m2);
+        //auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
+        //auto out = ProcessHelper::Execute3(m2);
+        auto out = ProcessHelper::ShellExecuteSudo(cmd);
 
 
         if(out.exitCode) isok = false;
@@ -507,13 +520,15 @@ int Work1::dd(const QString& src, const QString& dst, int bs, QString *mnt)
 {
     zInfo("copying...");//:"+src+"->"+dst );
     auto cmd = QStringLiteral("dd of=%1 bs=%3 if=%2 status=progress conv=fdatasync").arg(dst).arg(src).arg(bs);
-    auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
-    auto out = ProcessHelper::Execute3(m2);//2
+    //auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
+    //auto out = ProcessHelper::Execute3(m2);//2
+    auto out = ProcessHelper::ShellExecuteSudo(cmd);
     if(out.exitCode) return 1;
 
     zInfo("copy ready, syncing...");
-    auto m3 = ProcessHelper::Model::Parse(QStringLiteral("sync"));
-    ProcessHelper::Execute3(m3);//2
+    //auto m3 = ProcessHelper::Model::Parse(QStringLiteral("sync"));
+    //ProcessHelper::Execute3(m3);//2
+    ProcessHelper::ShellExecute(QStringLiteral("sync"));
 
     if(mnt)*mnt = out.ToString();
 
@@ -527,22 +542,30 @@ int Work1::dd2(const QString& src, const QStringList& dsts, int bs, QString *mnt
 {
     zInfo("copying...");//:"+src+"->"+dst );
 
-    QString cmd2;
+    QString of;
     for(auto&dst:dsts){
-        cmd2 = QStringLiteral("of=%1").arg(dst);
+        if(!of.isEmpty()) of+=" ";
+        of += QStringLiteral("of=%1").arg(dst);
     }
 
-    auto cmd = QStringLiteral("dcfldd %1 bs=%3 if=%2 status=progress").arg(cmd2).arg(src).arg(bs);
+    int statusinterval = (1024*1024)/bs;
+
+    auto cmd = QStringLiteral("dcfldd if=%1 %2 bs=%3 status=on statusinterval=%4")
+                   .arg(src).arg(of).arg(bs).arg(statusinterval);
 
     zInfo("cmd:"+cmd);
 
-    auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
-    auto out = ProcessHelper::Execute3(m2);//2
+//    auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
+//    auto out = ProcessHelper::Execute3(m2);//2
+    auto out = ProcessHelper::ShellExecuteSudo(cmd);
     if(out.exitCode) return 1;
 
     zInfo("copy ready, syncing...");
-    auto m3 = ProcessHelper::Model::Parse(QStringLiteral("sync"));
-    ProcessHelper::Execute3(m3);//2
+
+    //auto m3 = ProcessHelper::Model::Parse(QStringLiteral("sync"));
+    //ProcessHelper::Execute3(m3);//2
+    ProcessHelper::ShellExecute(QStringLiteral("sync"));
+
 
     if(mnt)*mnt = out.ToString();
 
